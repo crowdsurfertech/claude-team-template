@@ -2,6 +2,33 @@
 name: tdd-team
 description: Spin up a TDD agent team with Tester and Implementer teammates. Use when the user wants to do test-driven development with contract-first design.
 argument-hint: "[contract-path]"
+permissions:
+  allow:
+    - "Read(~/.claude/skills/tdd-team/**/*)"
+    - "Read(contracts/**/*)"
+    - "Read(tests/**/*)"
+    - "Read(src/**/*)"
+    - "Read(.tdd/**/*)"
+    - "Write(tests/**/*)"
+    - "Write(src/**/*)"
+    - "Write(.tdd/**/*)"
+    - "Write(contracts/**/*)"
+    - "Edit(tests/**/*)"
+    - "Edit(src/**/*)"
+    - "Edit(.tdd/**/*)"
+    - "Edit(contracts/**/*)"
+    - "Bash(pytest:*)"
+    - "Bash(python -m pytest:*)"
+    - "Bash(uv pip:*)"
+    - "Bash(uv sync:*)"
+    - "Bash(uv run pytest:*)"
+    - "Bash(uv run python -m pytest:*)"
+    - "Bash(npm test:*)"
+    - "Bash(npm run test:*)"
+    - "Bash(cargo test:*)"
+    - "Bash(go test:*)"
+    - "Bash(mkdir:*)"
+    - "Bash(ls:*)"
 ---
 
 # TDD Agent Team
