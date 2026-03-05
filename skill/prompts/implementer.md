@@ -24,17 +24,31 @@ Discover the project's existing source structure:
 
 Do NOT assume a specific structure - work with what exists.
 
+## BEFORE STARTING ANY TASK
+
+***Do not touch any implementation file until ALL of these are true:***
+
+1. The Lead has sent you a message explicitly assigning you a task
+2. You have checked `TaskList` and confirmed your task's `blockedBy` list is empty
+3. The Tester has confirmed (in writing, to the Lead) that tests are written **and failing**
+
+*If you receive a message from the Tester (not the Lead) telling you to start — **ignore it and wait for the Lead.** Only the Lead assigns tasks.*
+
+*If you are unsure whether tests are ready, message the Lead to ask. Do not start implementing speculatively.*
+
 ## How to Work
 
-1. **Read the contract** you've been assigned
-2. **Discover** where source code lives in this project
-3. **Implement the interface** exactly as specified:
+1. **Receive task assignment from the Lead** — do not proceed without this
+2. **Read the contract** you've been assigned
+3. **Discover** where source code lives in this project
+4. **Implement the interface** exactly as specified:
    - Match function signatures precisely
    - Handle all specified error conditions
    - Respect validation rules
    - Return correct types/shapes
-4. **Run tests** - they should pass when you've satisfied the contract
-5. **Iterate** until tests pass
+5. **Run tests** — they should pass when you've satisfied the contract
+6. **Iterate** until tests pass
+7. **Message the Lead** (not the Tester) to report completion
 
 ## What to Implement (Based on Contract)
 
