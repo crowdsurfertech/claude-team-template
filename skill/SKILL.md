@@ -1,6 +1,6 @@
 ---
 name: tdd-team
-description: Spin up a TDD agent team with Tester and Implementer teammates. Use when the user wants to do test-driven development with contract-first design.
+description: Spin up a TDD agent team with Tester and Implementer teammates. Use when the user wants to do test-driven development with contract-first design. REQUIRES Agent Teams tools (TeamCreate, TaskCreate, SendMessage, etc.) — do NOT invoke if those tools are unavailable.
 argument-hint: "[contract-path]"
 permissions:
   allow:
@@ -55,7 +55,11 @@ permissions:
 
 # TDD Agent Team
 
-This skill creates and coordinates a test-driven development workflow using Agent Teams.
+This skill creates and coordinates a test-driven development workflow using [Agent Teams](https://code.claude.com/docs/en/agent-teams).
+
+> **Required tools**: `TeamCreate`, `TeamDelete`, `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate`, `TaskStop`, `TaskOutput`, `SendMessage`
+>
+> **Do NOT proceed** if any of these tools are missing from your available tool set. If they are absent, tell the user that Agent Teams must be enabled — see [the docs](https://code.claude.com/docs/en/agent-teams) for setup instructions.
 
 ## Arguments
 
@@ -87,13 +91,19 @@ Parse the argument to find contracts:
 
 ## Step 2: Verify Prerequisites
 
-Check that Agent Teams is enabled. If not, inform the user:
+**First**, confirm the Agent Teams tools are available in your tool set: `TeamCreate`, `TeamDelete`, `TaskCreate`, `TaskGet`, `TaskList`, `TaskUpdate`, `TaskStop`, `TaskOutput`, `SendMessage`. If any are missing, stop immediately and inform the user:
+
 ```
-Agent Teams must be enabled. Add to ~/.claude/settings.json:
+This skill requires Agent Teams, which is not currently available.
+See: https://code.claude.com/docs/en/agent-teams
+
+To enable it, add to ~/.claude/settings.json:
 {
   "env": { "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1" }
 }
 ```
+
+**Then**, confirm Agent Teams is configured. If it is not, give the user the same message above.
 
 Check that the contract location exists and has contracts. If not, offer to create one from the template in this skill's `templates/contract.md`.
 
@@ -101,7 +111,7 @@ Create the decisions directory if needed: `.tdd/decisions/<contract-name>/`
 
 ## Step 3: Spawn the Team
 
-Spawn two teammates, customizing the prompts with the contract location:
+Use `TeamCreate` to create the team, then spawn two teammates via `TeamCreate` or equivalent team management tools, customizing the prompts with the contract location:
 
 **Tester teammate** - base prompt from `prompts/tester.md`, adding:
 - Contract location: [the resolved contract path]
@@ -117,16 +127,19 @@ After spawning, enable **delegate mode** (Shift+Tab) to stay focused on coordina
 
 ## Step 4: Create Tasks
 
-Review the contract(s) and create tasks following the TDD cycle:
+Use `TaskCreate` to create tasks for each teammate, following the TDD cycle:
 
 1. `Tester: Write failing tests for [feature/section]`
 2. `Implementer: Make tests pass for [feature/section]`
 3. Repeat for each contract section
 
+Monitor progress with `TaskList` and `TaskGet`. Update status with `TaskUpdate`. Read output with `TaskOutput`.
+
 ## Step 5: Run the Workflow
 
-Coordinate the teammates:
-- Monitor progress via the shared task list
+Coordinate the teammates using Agent Teams tools:
+- Monitor progress via `TaskList` / `TaskGet` / `TaskOutput`
+- Communicate with teammates via `SendMessage`
 - Enforce lane discipline (Tester can't read `src/`, Implementer can't read `tests/`)
 - Arbitrate disputes by checking the contract
 - Escalate to user when needed
@@ -216,6 +229,7 @@ The decision record explains *why* the contract says what it says - useful conte
 ## When Work is Complete
 
 1. Verify all tests pass
-2. Ask teammates to shut down
-3. Clean up the team
-4. Notify user via Slack that work is complete
+2. Send shutdown messages to teammates via `SendMessage`
+3. Stop any running tasks with `TaskStop`
+4. Clean up the team with `TeamDelete`
+5. Notify user via Slack that work is complete
