@@ -1,0 +1,37 @@
+#!/bin/bash
+# Upload a file to the task artifacts S3 bucket and print its S3 URI.
+# Reads ARTIFACTS_BUCKET and ARTIFACTS_PREFIX from the environment.
+#
+# Usage:
+#   save-artifact <path/to/file>
+#   save-artifact <path/to/file> "custom-name.ext"
+#
+# The S3 URI is printed to stdout so it can be included in Claude's response,
+# which causes it to appear in the Slack thread.
+
+FILE="${1:?Usage: save-artifact <file> [name]}"
+NAME="${2:-$(basename "$FILE")}"
+
+if [ -z "${ARTIFACTS_BUCKET:-}" ]; then
+  echo "save-artifact: ARTIFACTS_BUCKET not set" >&2
+  exit 1
+fi
+
+if [ -z "${ARTIFACTS_PREFIX:-}" ]; then
+  echo "save-artifact: ARTIFACTS_PREFIX not set" >&2
+  exit 1
+fi
+
+if [ ! -f "$FILE" ]; then
+  echo "save-artifact: file not found: $FILE" >&2
+  exit 1
+fi
+
+DEST="s3://$ARTIFACTS_BUCKET/$ARTIFACTS_PREFIX/$NAME"
+ENDPOINT_FLAG=""
+[ -n "${ARTIFACTS_ENDPOINT_URL:-}" ] && ENDPOINT_FLAG="--endpoint-url $ARTIFACTS_ENDPOINT_URL"
+
+# shellcheck disable=SC2086
+aws s3 cp "$FILE" "$DEST" $ENDPOINT_FLAG --quiet
+
+echo "Artifact saved: $DEST"

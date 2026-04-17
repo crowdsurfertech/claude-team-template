@@ -1,0 +1,33 @@
+#!/bin/bash
+# Post a message to Slack. Reads SLACK_BOT_TOKEN, SLACK_CHANNEL, SLACK_THREAD_TS from env.
+# Usage: slack-post "your message here"
+
+MSG="$*"
+
+if [ -z "${SLACK_BOT_TOKEN:-}" ] || [ -z "${SLACK_CHANNEL:-}" ]; then
+  echo "slack-post: SLACK_BOT_TOKEN and SLACK_CHANNEL required" >&2
+  exit 1
+fi
+
+if [ -z "$MSG" ]; then
+  echo "slack-post: no message provided" >&2
+  exit 1
+fi
+
+PAYLOAD=$(python3 -c "
+import json, os, sys
+d = {'channel': os.environ['SLACK_CHANNEL'], 'text': sys.argv[1]}
+if os.environ.get('SLACK_THREAD_TS'):
+    d['thread_ts'] = os.environ['SLACK_THREAD_TS']
+print(json.dumps(d))
+" "$MSG")
+
+RESPONSE=$(curl -sf -X POST https://slack.com/api/chat.postMessage \
+  -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d "$PAYLOAD" 2>&1)
+
+if [ $? -ne 0 ]; then
+  echo "slack-post: curl failed: $RESPONSE" >&2
+  exit 1
+fi
