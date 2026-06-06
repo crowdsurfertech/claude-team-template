@@ -61,6 +61,45 @@ This skill creates and coordinates a test-driven development workflow using [Age
 >
 > **Do NOT proceed** if any of these tools are missing from your available tool set. If they are absent, tell the user that Agent Teams must be enabled — see [the docs](https://code.claude.com/docs/en/agent-teams) for setup instructions.
 
+## Roles
+
+| Role | Who | Purpose |
+|------|-----|---------|
+| **Drafter** | Teammate (early phase) | Converts a build plan or user brief into formal contracts |
+| **Team Lead** | You (the coordinator) | Dispatches, arbitrates, maintains HANDOFF.md |
+| **Tester** | Teammate | Writes failing tests from contract |
+| **Implementer** | Teammate | Makes tests pass from contract |
+
+## Team Lead Philosophy
+
+**You are a coordinator, not a coder.** Defer as much work as possible to
+teammates to keep your own context minimal and focused on coordination.
+
+Your job:
+- Read and internalize the contract (your ONE source of truth)
+- Break it into work units
+- Dispatch work to Tester and Implementer teammates
+- Relay filtered information between them (respecting lane discipline)
+- Arbitrate disputes by consulting the contract
+- Escalate to the user when the contract is insufficient
+- **Maintain `HANDOFF.md`** so a fresh Lead can take over seamlessly
+
+**You must NOT:**
+- Read implementation source code (ask Implementer for a summary)
+- Read test code (ask Tester for a summary)
+- Write any production or test code directly
+- Hold large code blocks in your context
+
+The less implementation detail you carry, the better you stay on-mission.
+
+### Context Budget
+
+For large builds, your context WILL fill up. Plan for this:
+- After each completed TDD cycle, update `HANDOFF.md`
+- When you sense context pressure (many iterations, large contract set),
+  tell the user you're ready to hand off
+- The next Team Lead reads `HANDOFF.md` and continues from where you stopped
+
 ## Arguments
 
 The skill accepts an optional argument to specify which contract(s) to implement:
@@ -109,7 +148,25 @@ Check that the contract location exists and has contracts. If not, offer to crea
 
 Create the decisions directory if needed: `.tdd/decisions/<contract-name>/`
 
-## Step 3: Spawn the Team
+## Step 3: Draft Contracts (if needed)
+
+If no contracts exist yet — or the user provides a build plan, design doc, or
+verbal brief instead of contracts — spawn a **Drafter teammate** to produce
+formal contracts before TDD begins.
+
+**Drafter teammate** - base prompt from `prompts/drafter.md`, adding:
+- The source material (build plan, user brief, etc.)
+- Target directory for contracts (default: `contracts/`)
+
+Use `TaskCreate` to assign: `Drafter: Produce interface contracts from build plan`
+
+**Review the Drafter's output yourself** before proceeding. Contracts are your
+source of truth — make sure they're complete enough for a Tester to write
+meaningful tests. If they're too vague, `SendMessage` the Drafter with feedback.
+
+Once contracts are satisfactory, proceed to spawning the main team.
+
+## Step 4: Spawn the Team
 
 Use `TeamCreate` to create the team, then spawn two teammates via `TeamCreate` or equivalent team management tools, customizing the prompts with the contract location:
 
@@ -125,7 +182,7 @@ Do NOT specify where tests or implementation should go - let the teammates disco
 
 After spawning, enable **delegate mode** (Shift+Tab) to stay focused on coordination.
 
-## Step 4: Create Tasks
+## Step 5: Create Tasks
 
 Use `TaskCreate` to create tasks for each teammate, following the TDD cycle:
 
@@ -135,7 +192,7 @@ Use `TaskCreate` to create tasks for each teammate, following the TDD cycle:
 
 Monitor progress with `TaskList` and `TaskGet`. Update status with `TaskUpdate`. Read output with `TaskOutput`.
 
-## Step 5: Run the Workflow
+## Step 6: Run the Workflow
 
 Coordinate the teammates using Agent Teams tools:
 - Monitor progress via `TaskList` / `TaskGet` / `TaskOutput`
@@ -229,7 +286,79 @@ The decision record explains *why* the contract says what it says - useful conte
 ## When Work is Complete
 
 1. Verify all tests pass
-2. Send shutdown messages to teammates via `SendMessage`
-3. Stop any running tasks with `TaskStop`
-4. Clean up the team with `TeamDelete`
-5. Notify user via Slack that work is complete
+2. Update `HANDOFF.md` to mark all work units done
+3. Send shutdown messages to teammates via `SendMessage`
+4. Stop any running tasks with `TaskStop`
+5. Clean up the team with `TeamDelete`
+6. Notify user via Slack that work is complete
+
+## HANDOFF.md — Team Lead Relay
+
+For large builds, a single Team Lead session will exhaust its context. The
+solution: maintain a `HANDOFF.md` file at the project root (or `.tdd/HANDOFF.md`)
+that captures everything a fresh Lead needs to continue.
+
+### When to hand off
+
+- You've completed several TDD cycles and your context is heavy
+- You notice you're losing track of decisions or repeating yourself
+- The user asks you to wrap up and hand off
+- You proactively sense diminishing coordination quality
+
+### What goes in HANDOFF.md
+
+Update this file **after every completed TDD cycle**, not just at handoff time.
+It should always be current enough for a cold start.
+
+```markdown
+# TDD Team Handoff
+
+**Last updated**: YYYY-MM-DD HH:MM
+**Contracts**: contracts/*.contract.md
+**Decisions**: .tdd/decisions/
+
+## Work Units
+
+| # | Contract section | Status | Notes |
+|---|-----------------|--------|-------|
+| 1 | User auth | done | — |
+| 2 | Session mgmt | done | Decision: JWT not session cookies (see .tdd/decisions/...) |
+| 3 | Role permissions | in-progress | Tester done, Implementer has 2 failing tests |
+| 4 | Audit logging | pending | — |
+| 5 | Rate limiting | pending | — |
+
+## Current State
+
+[What's actively happening — which teammate is working on what,
+any open disputes or blockers]
+
+## Open Questions
+
+[Anything escalated to user but not yet answered]
+
+## Key Decisions Made
+
+[Brief list — point to .tdd/decisions/ files for details]
+
+## Test Commands
+
+[How to run the test suite, any setup required]
+```
+
+### How the next Lead picks up
+
+When a fresh session starts and the user invokes this skill:
+
+1. Read `HANDOFF.md` first
+2. Read the relevant contracts
+3. Check `.tdd/decisions/` for context on past rulings
+4. Resume from the first non-`done` work unit
+5. Spawn team and continue the standard workflow (Step 4+)
+
+### Signaling the relay
+
+Tell the user when you're ready to hand off:
+
+> "I've updated HANDOFF.md with current state. Start a new session and invoke
+> `/tdd-team` again — the next Lead will pick up from work unit #N."
+

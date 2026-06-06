@@ -6,11 +6,14 @@ A Claude Code skill for running test-driven development with Agent Teams.
 
 When you say `/tdd-team` or "spin up a TDD team", Claude will:
 
-1. **Spawn a Tester teammate** - writes tests based on contracts, can't see implementation
-2. **Spawn an Implementer teammate** - writes code based on contracts, can't see tests
-3. **Act as the PM** - coordinates work, enforces rules, escalates to you via Slack
+1. **Spawn a Drafter teammate** (if needed) - turns a build plan, design doc, or brief into formal contracts before TDD begins
+2. **Spawn a Tester teammate** - writes tests based on contracts, can't see implementation
+3. **Spawn an Implementer teammate** - writes code based on contracts, can't see tests
+4. **Act as the PM / Team Lead** - coordinates work, enforces rules, escalates to you via Slack
 
-The team works from interface contracts you provide. The Tester and Implementer never see each other's code - they only communicate through the contract and the PM.
+The team works from interface contracts (which you provide, or the Drafter produces). The Tester and Implementer never see each other's code - they only communicate through the contract and the PM.
+
+For large builds, the Team Lead maintains a `HANDOFF.md` so a fresh session can pick up where the previous one ran out of context - see "Handoff & Context Relay" below.
 
 ## Installation
 
@@ -168,6 +171,12 @@ You'll get Slack messages when:
 3. **Justified changes** - contract modifications require valid reasons (testability, impossibility, security)
 4. **PM arbitrates** - disputes get resolved by checking the contract; ambiguities escalate to you
 
+## Handoff & Context Relay
+
+A single Team Lead session can exhaust its context window on large builds. To handle this, the Lead maintains a `HANDOFF.md` (at the project root or `.tdd/HANDOFF.md`), updating it after every completed TDD cycle. It tracks each work unit's status, current state, open questions, key decisions, and test commands.
+
+When context gets heavy, the Lead tells you it's ready to hand off. Start a fresh session and run `/tdd-team` again - the new Lead reads `HANDOFF.md`, the contracts, and `.tdd/decisions/`, then resumes from the first unfinished work unit without re-reading completed work.
+
 ## File Structure
 
 **The Skill** (`~/.claude/skills/tdd-team/`):
@@ -175,6 +184,7 @@ You'll get Slack messages when:
 tdd-team/
 ├── SKILL.md              # Main instructions for Claude
 ├── prompts/
+│   ├── drafter.md        # Drafter teammate prompt (build plan -> contracts)
 │   ├── tester.md         # Tester teammate prompt
 │   └── implementer.md    # Implementer teammate prompt
 ├── templates/
